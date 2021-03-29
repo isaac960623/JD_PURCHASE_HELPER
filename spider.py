@@ -432,7 +432,7 @@ class JDSpider:
             if js['success']:
                 print('下单成功！订单号：{0}'.format(js['orderId']))
                 print('请前往京东官方商城付款')
-
+                #
                 list_url = 'https://order.jd.com/center/list.action'
 
                 response = self.sess.get(
@@ -444,60 +444,6 @@ class JDSpider:
                 soup = BeautifulSoup(response.text, 'lxml')
                 btn_click_url = soup.find('a',class_='btn-pay')['href']
                 print("btn_click_url: "+ btn_click_url)
-                response_pay_web = self.sess.get(
-                    btn_click_url,
-                    headers=self.headers,
-                    cookies=self.cookies,
-                    params={
-                        'orderid': '149731732311',
-                        'reqInfo': 'eyJjYXRlZ29yeSI6IjEiLCJvcmRlckFtb3VudCI6IjM3LjkwIiwib3JkZXJFcnBQbGF0IjoiSkQiLCJ2ZXJzaW9uIjoiMy4wIiwib3JkZXJJZCI6IjE0OTczMTczMjMxMSIsInBheUFtb3VudCI6IjM3LjkwIiwiY29tcGFueUlkIjoiMyIsIm9yZGVyVHlwZSI6IjAiLCJ0b1R5cGUiOiIxMCJ9',
-                        'sign': '7ed323309dc3867124ff5e751bd67a69',
-                        'appId': 'pcashier',
-                        'cashierId': '1'
-                    }
-                )
-                print(response_pay_web.text)
-                soup = BeautifulSoup(response_pay_web.text, 'lxml')
-                pay_qr_code_url = soup.find('img',class_ = 'order-info-left-qr')['src']
-                pay_qr_code_url = 'https://' + pay_qr_code_url
-                print(pay_qr_code_url)
-                response = self.sess.get(
-                    pay_qr_code_url,
-                    headers=self.headers,
-                    cookies=self.cookies,
-                    params={
-                        'appid': 133,
-                        'size': 147,
-                        't': int(time.time() * 1000),
-                    }
-                )
-                if response.status_code != requests.codes.OK:
-                    print(f"获取二维码失败:{response.status_code}")
-                    return False
-
-                # update cookies
-                self.cookies.update(response.cookies)
-
-                # save QR code
-                image_file = 'qr_pay.png'
-                with open(image_file, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=1024):
-                        f.write(chunk)
-
-                # print QR code in console
-                image_file = 'qr_pay.png'
-                QRcodes_pay = decode(Image.open(image_file).convert('RGBA'))
-                for QRcode_pay in QRcodes_pay:
-                    QRcode_url = QRcode_pay.data.decode("utf-8")
-                print(QRcode_url)
-                qr = qrcode.QRCode(
-                    version=5,
-                    error_correction=qrcode.constants.ERROR_CORRECT_L,
-                    box_size=10,
-                    border=4, )
-                qr.add_data(QRcode_url)
-                qr.print_ascii(invert=True)
-
                 # send_email('下单成功', f'应付款：{payment}, 请前往京东官方商城付款')
                 return True
             else:
