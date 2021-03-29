@@ -8,13 +8,11 @@ import json
 import requests
 import re
 import logging
-import lxml
-import urllib3
+import json
 from pyzbar.pyzbar import decode
 from PIL import Image
 import qrcode
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
 import smtplib
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -583,13 +581,14 @@ if __name__ == '__main__':
 
     options = parser.parse_args()
     # for test
-    options.count = 1
-    #卷纸
-    #options.good = '10022077953814'
-    #吕家
-    #options.area = '15-1213-3038-59932'
-    options.good = '836068'
-    options.area = '15_1290_22049_22142'
+
+
+    with open("stockinfo.json", 'r') as load_json:
+        stock_info = json.load(load_json)
+
+    options.count = stock_info[0]['count']
+    options.good = stock_info[0]['good']
+    options.area = stock_info[0]['area']
     options.timer = ""
 
     spider = JDSpider()
