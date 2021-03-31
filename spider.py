@@ -1,10 +1,8 @@
 import argparse
-import os
 import pickle
 import random
 import sys
 import time
-import json
 import requests
 import re
 import logging
@@ -15,6 +13,7 @@ import qrcode
 from bs4 import BeautifulSoup
 import smtplib
 from email.mime.text import MIMEText
+from email.header import Header
 from email.utils import formataddr
 
 logging.basicConfig(
@@ -77,7 +76,7 @@ class JDSpider:
             print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
             print(f'{time.ctime()} > 请打开京东手机客户端，准备扫码登录:')
             urls = (
-                'https://passport.jd.com/new/login.aspx',
+                u'https://passport.jd.com/new/login.aspx',
                 'https://qr.m.jd.com/show',
                 'https://qr.m.jd.com/check',
                 'https://passport.jd.com/uc/qrCodeTicketValidation'
@@ -111,15 +110,14 @@ class JDSpider:
             # update cookies
             self.cookies.update(response.cookies)
 
-
             # save QR code
             image_file = 'qr.png'
             with open(image_file, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=1024):
                     f.write(chunk)
 
-            #print QR code in console
-            #step 2: scan qrcode with your mobile JD to login
+            # print QR code in console
+            # step 2: scan qrcode with your mobile JD to login
             image_file = 'qr.png'
             QRcodes = decode(Image.open(image_file).convert('RGBA'))
             for QRcode in QRcodes:
@@ -133,7 +131,6 @@ class JDSpider:
             qr.add_data(QRcode_url)
             # invert=True白底黑块,有些app不识别黑底白块.
             qr.print_ascii(invert=True)
-
 
             # step 3: check scan result    京东上也是不断去发送check请求来判断是否扫码的
             self.headers['Host'] = 'qr.m.jd.com'
@@ -442,7 +439,7 @@ class JDSpider:
                 soup = BeautifulSoup(response.text, 'lxml')
                 btn_click_url = soup.find('a',class_='btn-pay')['href']
                 print("btn_click_url: "+ btn_click_url)
-                # send_email('下单成功', f'应付款：{payment}, 请前往京东官方商城付款')
+                #send_email('下单成功', f'应付款：{payment}, 请前往京东官方商城付款: \n 付款链接: btn_click_url')
                 return True
             else:
                 print('下单失败！<{0}: {1}>'.format(js['resultCode'], js['message']))
@@ -506,36 +503,27 @@ def get_jxj(soup):
 
 
 def send_email(subject, message):
+    my_user = 'isaac960623'  # 邮件发送者
+    my_pass = 'Isaac960623.'  # 邮件发送者邮箱密码
+    mail_host = 'stmp.163.com'
+
+    sender = 'isaac960623@163.com'
+    receiver = ['isaac960623@gmail.com']
+    message = MIMEText(message, 'html', 'utf-8')
+    message['From'] = Header("菜鸟教程", 'utf-8')
+    message['To'] = Header("测试", 'utf-8')
+    message['Subject'] = Header('Python SMTP 邮件测试', 'utf-8')
+
     try:
-        my_sender = ''  # 邮件发送者
-        my_pass = ''  # 邮件发送者邮箱密码
-        my_user = ''
-        msg = MIMEText(message, 'html', 'utf-8')
-        msg['From'] = formataddr(["来自京东自动下单机器人", my_sender])
-        msg['To'] = formataddr(["由我的网易邮箱接收", my_user])
-        msg['Subject'] = subject
-
-        server = smtplib.SMTP_SSL("smtp.qq.com", 465)
-        server.login(my_sender, my_pass)
-        server.sendmail(my_sender, [my_user, ], msg.as_string())
-        server.quit()
-    except Exception as e:
-        logging.error(e)
-        try:
-            my_sender = ''  # 邮件发送者
-            my_pass = ''  # 邮件发送者邮箱密码
-            my_user = ''
-            msg = MIMEText(message, 'html', 'utf-8')
-            msg['From'] = formataddr(["来自京东自动下单机器人", my_sender])
-            msg['To'] = formataddr(["由我的网易邮箱接收", my_user])
-            msg['Subject'] = subject
-
-            server = smtplib.SMTP_SSL("smtp.qq.com", 465)
-            server.login(my_sender, my_pass)
-            server.sendmail(my_sender, [my_user, ], msg.as_string())
-            server.quit()
-        except Exception as e:
-            logging.error(e)
+        smtpObj = smtplib.SMTP()
+        smtpObj.connect(mail_host, 25)  # 25 为 SMTP 端口号
+        smtpObj.login(my_user, my_pass)
+        smtpObj.sendmail(sender, receiver, message.as_string())
+        print
+        "邮件发送成功"
+    except smtplib.SMTPException:
+        print
+        "Error: 无法发送邮件"
 
 
 def should_monitor(clock):
